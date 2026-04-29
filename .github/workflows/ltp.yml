@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: CC0-1.0
+name: Run ltp
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: '30 18 * * 4'
+  workflow_dispatch:
+
+env:
+  ALPINE_BRANCH: v3.23
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+        suite:
+          - syscalls
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Create VM image
+        run: |
+          wget -q https://raw.githubusercontent.com/alpinelinux/alpine-make-vm-image/v0.13.4/alpine-make-vm-image \
+            && echo '03dc4581b1eaa34a951cc210e963b98ded44dc469f7d0c05f00431ceb58390b78f3db0386fc94aa1e5b2c6471f2dd74b663454179781bdd3a30776ffa525e2cb  alpine-make-vm-image' | sha512sum -c \
+            || exit 1
+
+          echo ::group::Install dependencies
+          arch="$(uname -m)"
+          case "$arch" in
+            x86_64) qemu_arch=x86;;
+            aarch64) qemu_arch=arm;;
+          esac
+          sudo apt-get install qemu-utils qemu-system-"$qemu_arch" python3-pip
+          sudo pip install kirk
+          echo ::endgroup::
+
+          echo ::group::Create Alpine VM image
+          sed \
+            -e "s/@ALPINE_BRANCH@/$ALPINE_BRANCH/" \
+            -e 's|@R2_ENDPOINT@|${{ secrets.r2_dev_url }}|' \
+            apk/repositories.in > apk/repositories
+          sudo sh ./alpine-make-vm-image \
+            --image-format qcow2 \
+            --image-size 8G \
+            --keys-dir apk/keys/"$arch" \
+            --repositories-file apk/repositories \
+            --packages ltp \
+            --script-chroot \
+            --serial-console \
+            alpine-vm.qcow2 -- ./configure.sh
+          echo ::endgroup::
+
+      # https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run test on QEMU
+        run: |
+          arch="$(uname -m)"
+          [ "$arch" = aarch64 ] && machine=virt
+
+          echo ::group::Run ltp
+          sudo LTP_TIMEOUT_MUL=8 kirk \
+            --verbose \
+            --com "qemu:image=alpine-vm.qcow2:user=root:system=$arch:ram=3G:smp=$(nproc):serial=isa${machine:+:options=--machine $machine}" \
+            --sut default:com=qemu \
+            --run-suite ${{ matrix.suite }}
+          echo ::endgroup::
