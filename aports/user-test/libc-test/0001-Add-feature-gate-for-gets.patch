@@ -1,0 +1,29 @@
+From f269f389e116daf959b4980a11016415aaac940f Mon Sep 17 00:00:00 2001
+From: sudotac <sudo@tofuyard.net>
+Date: Tue, 31 Mar 2026 20:22:10 +0900
+Subject: [PATCH] Add feature gate for gets
+
+gets was removed since C11.
+
+Signed-off-by: sudotac <sudo@tofuyard.net>
+---
+ src/api/stdio.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/api/stdio.c b/src/api/stdio.c
+index 03bd98b..8918341 100644
+--- a/src/api/stdio.c
++++ b/src/api/stdio.c
+@@ -65,7 +65,9 @@ C(EOF)
+ {int(*p)(void) = getchar_unlocked;}
+ {ssize_t(*p)(char**restrict,size_t*restrict,int,FILE*restrict) = getdelim;}
+ {ssize_t(*p)(char**restrict,size_t*restrict,FILE*restrict) = getline;}
++#if __STDC_VERSION__ < 202311L
+ {char*(*p)(char*) = gets;}
++#endif
+ {FILE*(*p)(char**,size_t*) = open_memstream;}
+ {int(*p)(FILE*) = pclose;}
+ {void(*p)(const char*) = perror;}
+-- 
+2.53.0
+

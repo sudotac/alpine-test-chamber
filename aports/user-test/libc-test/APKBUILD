@@ -1,0 +1,40 @@
+# Maintainer: sudotac <sudo@tofuyard.net>
+pkgname=libc-test
+pkgver=0_git20241019
+pkgrel=0
+_pkgrev=f2bac7711bec93467b73bec1465579ea0b8d5071
+pkgdesc="libc test suite"
+url="https://repo.or.cz/libc-test.git"
+arch="noarch"
+license="MIT AND BSD-3-Clause AND GPL-2.0-only"
+depends="gcc make musl-dev"
+subpackages="$pkgname-doc"
+source="
+	$pkgname-$pkgver.tar.gz::https://git.tofuyard.net/libc-test.git/snapshot/libc-test-$_pkgrev.tar.gz
+	config.mak
+	0001-api-unistd-guard-optional-obsolete-_PC-_SC-constants.patch
+	0001-Add-feature-gate-for-gets.patch
+	"
+builddir="$srcdir/$pkgname-$_pkgrev"
+options="!check !fhs" # this is a testsuite itself
+
+build() {
+	cp "$srcdir"/config.mak "$builddir"/
+
+	make
+	make cleanall
+}
+
+package() {
+	install -Dm 644 COPYRIGHT -t "$pkgdir"/usr/share/licenses/$pkgname/
+	install -Dm 644 Makefile -t "$pkgdir"/opt/$pkgname/
+	install -Dm 644 config.mak -t "$pkgdir"/opt/$pkgname/
+	cp -r src/ "$pkgdir"/opt/$pkgname/
+}
+
+sha512sums="
+caad922be2f94ffdb7ed6ea9727b64498124bb411fcab627c281db3668e534b96ca45b65947519237c2c80b7d5387c563d464fe976e676260f9a50f8c23a19a6  libc-test-0_git20241019.tar.gz
+1537bc39c3a9f1037713e7a65ffadc6be99ec5ff64af4e298b9658d05e3ef2d882c7915a874e5e4055c9e2bda7f7beadd701d0f1c195b67130e804b113e8e2a7  config.mak
+d6c55824d604cc66f707d015e81632c254d7dc2e7312bdd75b589783e02ba900350dda2b8e87a8557d06ba96dda9af8fb5969c58b02bbb0b592f0ab82f8a1a0a  0001-api-unistd-guard-optional-obsolete-_PC-_SC-constants.patch
+764bd2da848631e78f71c55e8c8e160f2323a8fa3f7b17e3916557f649d160c36143c1193743cc1080f3ed547fec5e92c2db29087419cadc5344e8b49563f6ba  0001-Add-feature-gate-for-gets.patch
+"
