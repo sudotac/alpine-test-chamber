@@ -45,7 +45,7 @@ jobs:
           echo ::group::Create Alpine VM image
           sed \
             -e "s/@ALPINE_BRANCH@/$ALPINE_BRANCH/" \
-            -e 's|@R2_ENDPOINT@|${{ secrets.r2_dev_url }}|' \
+            -e 's|@R2_DEV_URL@|${{ secrets.r2_dev_url }}|' \
             apk/repositories.in > apk/repositories
           sudo sh ./alpine-make-vm-image \
             --image-format qcow2 \
