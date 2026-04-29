@@ -1,0 +1,76 @@
+# SPDX-License-Identifier: CC0-1.0
+name: Build and deploy aports
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/buildrepo.yml
+      - 'aports/user-test/**'
+  workflow_dispatch:
+
+env:
+  ALPINE_BRANCH: v3.23
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    container: alpine:3.23
+    steps:
+      - name: Setup environment
+        run: |
+          # note: we can't use some actions on alpine arm64 alas
+          # https://github.com/actions/runner/issues/801
+
+          # install dependencies
+          apk add -U \
+            alpine-sdk \
+            lua-aports \
+            rclone \
+            su-exec
+
+          # checkout
+          wget "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/tarball/$GITHUB_SHA" --header 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -qO - | tar zxf - --strip-components 1
+
+          # setup abuild
+          adduser -D smith
+          addgroup smith abuild
+          su-exec smith mkdir -p /home/smith/.abuild/
+          su-exec smith install -Dm644 apk/keys/*.pub /home/smith/.abuild/
+          keyname=$(find /home/smith/.abuild/ -type f -name '*.pub' -exec basename {} .pub \;)
+          su-exec smith sh -c "printf '%s' '${{ secrets.abuild_priv_key }}' > /home/smith/.abuild/$keyname"
+          su-exec smith sh -c "printf 'PACKAGER_PRIVKEY=\"/home/smith/.abuild/%s\"\n' \"$keyname\" >> /home/smith/.abuild/abuild.conf"
+
+          # setup apk repo
+          install -m 644 apk/keys/*.pub /etc/apk/keys/
+          echo /home/smith/packages/user-test >> /etc/apk/repositories
+
+          # setup rclone
+          su-exec smith mkdir -p /home/smith/.config/rclone/
+          cat << 'EOS' | su-exec smith tee /home/smith/.config/rclone/rclone.conf >/dev/null
+          [r2]
+          type = s3
+          provider = Cloudflare
+          access_key_id = ${{ secrets.r2_access_key_id }}
+          secret_access_key = ${{ secrets.r2_secret_access_key }}
+          endpoint = ${{ secrets.r2_endpoint }}
+          acl = private
+          no_check_bucket = true
+          EOS
+      - name: Download packages from R2
+        run: |
+          su-exec smith mkdir -p /home/smith/packages/
+          su-exec smith rclone copy r2:alpine-test-chamber/"$ALPINE_BRANCH"/user-test/"$(abuild -A)"/ /home/smith/packages/user-test/"$(abuild -A)"/
+      - name: Build aports
+        run: |
+          chown -R smith:smith "$(pwd)"/aports
+          su-exec smith buildrepo -a "$(pwd)"/aports user-test
+      - name: Upload packages to R2
+        run: |
+          su-exec smith rclone sync /home/smith/packages/user-test/"$(abuild -A)"/ r2:alpine-test-chamber/"$ALPINE_BRANCH"/user-test/"$(abuild -A)"/
