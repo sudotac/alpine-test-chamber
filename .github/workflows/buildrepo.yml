@@ -6,6 +6,12 @@ on:
       - master
     paths:
       - .github/workflows/buildrepo.yml
+      - 'apk/keys/**'
+      - 'aports/user-test/**'
+  pull_request:
+    paths:
+      - .github/workflows/buildrepo.yml
+      - 'apk/keys/**'
       - 'aports/user-test/**'
   workflow_dispatch:
 
@@ -72,5 +78,6 @@ jobs:
           chown -R smith:smith "$(pwd)"/aports
           su-exec smith buildrepo -a "$(pwd)"/aports user-test
       - name: Upload packages to R2
+        if: ${{ github.event_name != 'pull_request' }}
         run: |
           su-exec smith rclone sync /home/smith/packages/user-test/"$(abuild -A)"/ r2:alpine-test-chamber/"$ALPINE_BRANCH"/user-test/"$(abuild -A)"/
