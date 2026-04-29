@@ -35,6 +35,7 @@ jobs:
             x86_64) qemu_arch=x86;;
             aarch64) qemu_arch=arm;;
           esac
+          sudo apt-get update
           sudo apt-get install qemu-utils qemu-system-"$qemu_arch" expect
           echo ::endgroup::
 
