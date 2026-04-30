@@ -65,8 +65,18 @@ jobs:
       - name: Run test on QEMU
         run: |
           arch="$(uname -m)"
-          [ $arch = x86_64 ] && { kvm= ; cpu=host; }
-          [ $arch = aarch64 ] && { machine=virt; cpu=max; }
+          case "$arch" in
+            x86_64)
+              kvm=
+              cpu=host
+              ;;
+            aarch64)
+              machine=virt
+              cpu=cortex-a76
+              uefi_code=/usr/share/AAVMF/AAVMF_CODE.fd
+              uefi_vars=/usr/share/AAVMF/AAVMF_VARS.fd
+              ;;
+          esac
 
           echo ::group::Run libc-test
           expect -c "set timeout -1; spawn sudo qemu-system-$arch \
@@ -75,6 +85,8 @@ jobs:
             ${kvm+-enable-kvm} \
             -cpu $cpu \
             -smp $(nproc) \
+            ${uefi_code:+-drive if=pflash,format=raw,readonly=on,file="$uefi_code"} \
+            ${uefi_vars:+-drive if=pflash,format=raw,file="$uefi_vars"} \
             -drive if=none,file=alpine-vm.qcow2,format=qcow2,id=hd0 \
             -device virtio-blk-pci,drive=hd0 \
             -nographic; "'expect "localhost login: "; send -- "root\r"; expect "localhost:~# "; send -- "make -C /opt/libc-test\r"; expect "localhost:~# ";' \
