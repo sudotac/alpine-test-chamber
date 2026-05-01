@@ -9,3 +9,5 @@ auto eth0
 iface eth0 inet dhcp
 EOS
 rc-update --quiet add networking boot
+
+sed -i '/^#ttyS0/a hvc0::respawn:/sbin/getty -L 115200 hvc0 vt100' /etc/inittab
