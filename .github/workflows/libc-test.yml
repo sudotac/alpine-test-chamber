@@ -44,6 +44,10 @@ jobs:
             -e "s/@ALPINE_BRANCH@/$ALPINE_BRANCH/" \
             -e 's|@R2_DEV_URL@|${{ secrets.r2_dev_url }}|' \
             apk/repositories.in > apk/repositories
+          sed -i \
+            -e "s/'ttyS0'/'hvc0'/" \
+            -e "s/'console=tty0'/'console=hvc0'/" \
+            alpine-make-vm-image
           sudo sh ./alpine-make-vm-image \
             --image-format qcow2 \
             --keys-dir apk/keys/"$arch" \
@@ -89,7 +93,11 @@ jobs:
             ${uefi_vars:+-drive if=pflash,format=raw,file="$uefi_vars"} \
             -drive if=none,file=alpine-vm.qcow2,format=qcow2,id=hd0 \
             -device virtio-blk-pci,drive=hd0 \
-            -nographic; "'expect "localhost login: "; send -- "root\r"; expect "localhost:~# "; send -- "make -C /opt/libc-test\r"; expect "localhost:~# ";' \
+            -display none \
+            -chardev stdio,id=tty \
+            -device virtio-serial \
+            -device virtconsole,chardev=tty \
+            ; "'expect "localhost login: "; send -- "root\r"; expect "localhost:~# "; send -- "make -C /opt/libc-test\r"; expect "localhost:~# ";' \
             | tr -d '\r' | sed 's/^FAIL /::warning::FAIL /'
           echo
           echo ::endgroup::
