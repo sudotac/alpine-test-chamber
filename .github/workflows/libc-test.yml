@@ -93,6 +93,7 @@ jobs:
             ${uefi_vars:+-drive if=pflash,format=raw,file="$uefi_vars"} \
             -drive if=none,file=alpine-vm.qcow2,format=qcow2,id=hd0 \
             -device virtio-blk-pci,drive=hd0 \
+            -device virtio-rng-pci \
             -display none \
             -chardev stdio,id=tty \
             -device virtio-serial \
