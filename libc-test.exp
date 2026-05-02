@@ -1,0 +1,10 @@
+#!/usr/bin/expect -f
+
+set timeout -1
+
+spawn {*}$argv
+expect "localhost login: "
+send -- "root\r"
+expect "localhost:~# "
+send -- "make -C /opt/libc-test\r"
+expect "localhost:~# "

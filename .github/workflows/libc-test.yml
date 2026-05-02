@@ -83,12 +83,12 @@ jobs:
           esac
 
           echo ::group::Run libc-test
-          expect -c "set timeout -1; spawn sudo qemu-system-$arch \
+          ./libc-test.exp sudo qemu-system-"$arch" \
             -m 3G \
-            ${machine:+--machine $machine} \
+            ${machine:+--machine "$machine"} \
             ${kvm+-enable-kvm} \
-            -cpu $cpu \
-            -smp $(nproc) \
+            -cpu "$cpu" \
+            -smp "$(nproc)" \
             ${uefi_code:+-drive if=pflash,format=raw,readonly=on,file="$uefi_code"} \
             ${uefi_vars:+-drive if=pflash,format=raw,file="$uefi_vars"} \
             -drive if=none,file=alpine-vm.qcow2,format=qcow2,id=hd0 \
@@ -98,7 +98,8 @@ jobs:
             -chardev stdio,id=tty \
             -device virtio-serial \
             -device virtconsole,chardev=tty \
-            ; "'expect "localhost login: "; send -- "root\r"; expect "localhost:~# "; send -- "make -C /opt/libc-test\r"; expect "localhost:~# ";' \
-            | tr -d '\r' | sed 's/^FAIL /::warning::FAIL /'
+            | tee libc-test.log
+          echo
+          cat libc-test.log | grep '^FAIL ' | sed 's/^FAIL /::warning::FAIL /'
           echo
           echo ::endgroup::
