@@ -47,6 +47,10 @@ jobs:
             -e "s/@ALPINE_BRANCH@/$ALPINE_BRANCH/" \
             -e 's|@R2_DEV_URL@|${{ secrets.r2_dev_url }}|' \
             apk/repositories.in > apk/repositories
+          sed -i \
+            -e "s/'ttyS0'/'hvc0'/" \
+            -e "s/'console=tty0'/'console=hvc0'/" \
+            alpine-make-vm-image
           sudo sh ./alpine-make-vm-image \
             --image-format qcow2 \
             --image-size 8G \
@@ -69,12 +73,23 @@ jobs:
       - name: Run test on QEMU
         run: |
           arch="$(uname -m)"
-          [ "$arch" = aarch64 ] && machine=virt
+          if [ "$arch" = aarch64 ]; then
+            machine=virt
+            cpu=cortex-a76
+            uefi_code=/usr/share/AAVMF/AAVMF_CODE.fd
+            uefi_vars=/usr/share/AAVMF/AAVMF_VARS.fd
+            options="-machine $machine -cpu $cpu -drive if=pflash,format=raw,readonly=on,file=$uefi_code -drive if=pflash,format=raw,file=$uefi_vars"
+
+            sudo sed -i \
+              -e '/"-enable-kvm"/d' \
+              -e 's|/dev/vport1p1|/dev/vport2p1|' \
+              "$(python -c 'import libkirk; print(libkirk.__path__[0])')"/channels/qemu.py
+          fi
 
           echo ::group::Run ltp
           sudo LTP_TIMEOUT_MUL=8 kirk \
             --verbose \
-            --com "qemu:image=alpine-vm.qcow2:user=root:system=$arch:ram=3G:smp=$(nproc):serial=isa${machine:+:options=--machine $machine}" \
+            --com "qemu:image=alpine-vm.qcow2:user=root:system=$arch:ram=3G:smp=$(nproc):serial=virtio${options:+:options=$options}" \
             --sut default:com=qemu \
             --run-suite ${{ matrix.suite }}
           echo ::endgroup::
