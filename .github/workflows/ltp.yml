@@ -91,5 +91,6 @@ jobs:
             --verbose \
             --com "qemu:image=alpine-vm.qcow2:user=root:system=$arch:ram=3G:smp=$(nproc):serial=virtio${options:+:options=$options}" \
             --sut default:com=qemu \
+            --suite-timeout 2h \
             --run-suite ${{ matrix.suite }}
           echo ::endgroup::
