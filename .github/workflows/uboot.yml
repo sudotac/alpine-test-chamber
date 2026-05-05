@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: CC0-1.0
+name: Run unit test of U-Boot
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  schedule:
+    - cron: '30 18 * * 4'
+  workflow_dispatch:
+
+env:
+  ALPINE_BRANCH: v3.23
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - aarch64
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install U-Boot into chroot
+        id: setup-alpine
+        uses: jirutka/setup-alpine@v1.4.1
+        with:
+          arch: aarch64
+          branch: ${{ env.ALPINE_BRANCH }}
+          packages: >
+            u-boot-qemu
+
+      - name: Run test on QEMU
+        shell: bash
+        run: |
+          case ${{ matrix.arch }} in
+            aarch64)
+              qemu_arch=arm
+              machine=virt
+              cpu=max
+              uboot=${{ steps.setup-alpine.outputs.root-path }}/usr/share/u-boot/qemu_arm64/u-boot.bin
+              ;;
+          esac
+
+          echo ::group::Install dependencies
+          sudo apt-get update
+          sudo apt-get install qemu-system-"$qemu_arch" expect
+          echo ::endgroup::
+
+          echo ::group::Run unit tests of U-Boot
+          ./uboot.exp qemu-system-${{ matrix.arch }} \
+            ${machine:+--machine "$machine"} \
+            -cpu "$cpu" \
+            -smp "$(nproc)" \
+            -bios "$uboot" \
+            -device virtio-rng-pci \
+            -nographic \
+            | tee uboot.log
+          echo ::endgroup::
