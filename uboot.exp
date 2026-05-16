@@ -4,5 +4,5 @@ set timeout -1
 
 spawn {*}$argv
 expect "=> "
-send "ut all\r"
+send -- "ut all\r"
 expect "=> "
