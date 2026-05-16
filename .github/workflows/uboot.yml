@@ -24,10 +24,10 @@ jobs:
           - aarch64
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Install U-Boot into chroot
         id: setup-alpine
-        uses: jirutka/setup-alpine@v1.4.1
+        uses: jirutka/setup-alpine@ae3b3ddba35054804fc4a3507b519fa7e8152050 # v1.4.1
         with:
           arch: aarch64
           branch: ${{ env.ALPINE_BRANCH }}
