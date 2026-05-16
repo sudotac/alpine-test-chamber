@@ -104,6 +104,6 @@ jobs:
             -device virtconsole,chardev=tty \
             | tee libc-test.log
           echo
-          cat libc-test.log | grep '^FAIL ' | sed 's/^FAIL /::warning::FAIL /'
+          grep '^FAIL ' libc-test.log | sed 's/^FAIL /::warning::FAIL /'
           echo
           echo ::endgroup::
