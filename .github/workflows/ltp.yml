@@ -5,6 +5,9 @@ on:
     branches:
       - master
   pull_request:
+    paths:
+      - .github/workflows/ltp.yml
+      - 'aports/user-test/ltp/**'
   schedule:
     - cron: '30 18 * * 4'
   workflow_dispatch:
