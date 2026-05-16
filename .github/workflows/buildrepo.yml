@@ -29,36 +29,45 @@ jobs:
     runs-on: ${{ matrix.runner }}
     container: alpine:3.23
     steps:
-      - name: Setup environment
+      # note: we can't use some actions on alpine arm64 alas
+      # https://github.com/actions/runner/issues/801
+      - name: Configure apk build environemnt
         run: |
-          # note: we can't use some actions on alpine arm64 alas
-          # https://github.com/actions/runner/issues/801
-
-          # install dependencies
+          echo ::group::Install dependencies
           apk add -U \
             alpine-sdk \
             lua-aports \
             rclone \
             su-exec
+          echo ::endgroup::
 
-          # checkout
-          wget "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/tarball/$GITHUB_SHA" --header 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -qO - | tar zxf - --strip-components 1
+          echo ::group::Checkout manually
+          wget "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/tarball/$GITHUB_SHA" --header 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -O - | tar zxvf - --strip-components 1
+          echo ::endgroup::
 
-          # setup abuild
+          echo ::group::Create user for abuild
           adduser -D smith
           addgroup smith abuild
-          su-exec smith mkdir -p /home/smith/.abuild/
-          su-exec smith install -Dm644 apk/keys/*.pub /home/smith/.abuild/
+          echo ::endgroup::
+
+          echo ::group::Configure abuild
+          su-exec smith mkdir -vp /home/smith/.abuild/
+          su-exec smith install -vDm644 apk/keys/*.pub /home/smith/.abuild/
           keyname=$(find /home/smith/.abuild/ -type f -name '*.pub' -exec basename {} .pub \;)
           su-exec smith sh -c "printf '%s' '${{ secrets.abuild_priv_key }}' > /home/smith/.abuild/$keyname"
-          su-exec smith sh -c "printf 'PACKAGER_PRIVKEY=\"/home/smith/.abuild/%s\"\n' \"$keyname\" >> /home/smith/.abuild/abuild.conf"
+          su-exec smith sh -c "printf 'PACKAGER_PRIVKEY=\"/home/smith/.abuild/%s\"\n' \"$keyname\" | tee -a /home/smith/.abuild/abuild.conf"
+          echo ::endgroup::
 
-          # setup apk repo
-          install -m 644 apk/keys/*.pub /etc/apk/keys/
-          echo /home/smith/packages/user-test >> /etc/apk/repositories
+          echo ::group::Initialize apk repository
+          install -vm 644 apk/keys/*.pub /etc/apk/keys/
+          echo /home/smith/packages/user-test | tee -a /etc/apk/repositories
+          echo ::endgroup::
 
+      - name: Download packages from R2
+        run: |
+          echo ::group::Configure rclone for R2
           # setup rclone
-          su-exec smith mkdir -p /home/smith/.config/rclone/
+          su-exec smith mkdir -vp /home/smith/.config/rclone/
           cat << 'EOS' | su-exec smith tee /home/smith/.config/rclone/rclone.conf >/dev/null
           [r2]
           type = s3
@@ -69,15 +78,23 @@ jobs:
           acl = private
           no_check_bucket = true
           EOS
-      - name: Download packages from R2
-        run: |
-          su-exec smith mkdir -p /home/smith/packages/
-          su-exec smith rclone copy r2:alpine-test-chamber/"$ALPINE_BRANCH"/user-test/"$(abuild -A)"/ /home/smith/packages/user-test/"$(abuild -A)"/
+          echo ::endgroup::
+
+          echo ::group::Run rclone
+          su-exec smith mkdir -vp /home/smith/packages/
+          su-exec smith rclone copy -v r2:alpine-test-chamber/"$ALPINE_BRANCH"/user-test/"$(abuild -A)"/ /home/smith/packages/user-test/"$(abuild -A)"/
+          echo ::endgroup::
+
       - name: Build aports
         run: |
-          chown -R smith:smith "$(pwd)"/aports
+          echo ::group::Run buildrepo
+          chown -vR smith:smith "$(pwd)"/aports
           su-exec smith buildrepo -a "$(pwd)"/aports user-test
+          echo ::endgroup::
+
       - name: Upload packages to R2
         if: ${{ github.event_name != 'pull_request' }}
         run: |
-          su-exec smith rclone sync /home/smith/packages/user-test/"$(abuild -A)"/ r2:alpine-test-chamber/"$ALPINE_BRANCH"/user-test/"$(abuild -A)"/
+          echo ::group::Run rsync
+          su-exec smith rclone sync -v /home/smith/packages/user-test/"$(abuild -A)"/ r2:alpine-test-chamber/"$ALPINE_BRANCH"/user-test/"$(abuild -A)"/
+          echo ::endgroup::
