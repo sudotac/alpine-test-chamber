@@ -5,6 +5,10 @@ on:
     branches:
       - master
   pull_request:
+    paths:
+      - .github/workflows/libc-test.yml
+      - 'aports/user-test/libc-test/**'
+      - 'libc-test/**'
   schedule:
     - cron: '30 18 * * 4'
   workflow_dispatch:
@@ -83,7 +87,7 @@ jobs:
           esac
 
           echo ::group::Run libc-test
-          ./libc-test.exp sudo qemu-system-"$arch" \
+          ./libc-test/run.exp sudo qemu-system-"$arch" \
             -m 3G \
             ${machine:+--machine "$machine"} \
             ${kvm+-enable-kvm} \

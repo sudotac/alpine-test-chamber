@@ -5,6 +5,9 @@ on:
     branches:
       - master
   pull_request:
+    paths:
+      - .github/workflows/uboot.yml
+      - 'uboot/**'
   schedule:
     - cron: '30 18 * * 4'
   workflow_dispatch:
@@ -49,7 +52,7 @@ jobs:
           echo ::endgroup::
 
           echo ::group::Run unit tests of U-Boot
-          ./uboot.exp qemu-system-${{ matrix.arch }} \
+          ./uboot/run.exp qemu-system-${{ matrix.arch }} \
             ${machine:+--machine "$machine"} \
             -cpu "$cpu" \
             -smp "$(nproc)" \
