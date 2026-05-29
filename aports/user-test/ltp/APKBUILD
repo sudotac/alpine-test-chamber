@@ -1,6 +1,6 @@
 # Maintainer: sudotac <sudo@tofuyard.net>
 pkgname=ltp
-pkgver=20260130
+pkgver=20260529
 pkgrel=0
 pkgdesc="Linux Test Project"
 url="https://linux-test-project.readthedocs.io"
@@ -64,7 +64,7 @@ prepare() {
 	default_prepare
 	autoreconf -if
 
-	# https://github.com/linux-test-project/ltp/blob/20260130/ci/alpine.sh#L33-L38
+	# https://github.com/linux-test-project/ltp/blob/20260529/ci/alpine.sh#L33-L38
 	rm -rfv \
 		testcases/kernel/syscalls/fmtmsg/fmtmsg01.c \
 		testcases/kernel/syscalls/timer_create/timer_create01.c \
@@ -94,5 +94,5 @@ package() {
 }
 
 sha512sums="
-400526f02af57037cf10c72400f34c5ff24c53ba9242b948445306870c162e6ff7c164e5d35c2d8d357186f53bd4d07781ce9dffdc3371ed20aa24d2de45247d  ltp-20260130.tar.gz
+39d2cdb427b848890e3d4d08fe2824c983f4091e12740b0ccc231969d4113d64940c0d20044005fc6e3d3a30fc4b7915ba06237f481c5205630576e7db5827f6  ltp-20260529.tar.gz
 "
