@@ -1,8 +1,8 @@
 # Maintainer: sudotac <sudo@tofuyard.net>
 pkgname=libc-test
-pkgver=0_git20241019
+pkgver=0_git20260522
 pkgrel=0
-_pkgrev=f2bac7711bec93467b73bec1465579ea0b8d5071
+_pkgrev=b95fe84efa38a146ad32ae02cac224e928926810
 pkgdesc="libc test suite"
 url="https://repo.or.cz/libc-test.git"
 arch="noarch"
