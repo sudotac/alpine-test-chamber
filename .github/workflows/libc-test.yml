@@ -1,13 +1,9 @@
 # SPDX-License-Identifier: CC0-1.0
 name: Run libc-test
 on:
-  push:
-    branches:
-      - master
   pull_request:
     paths:
       - .github/workflows/libc-test.yml
-      - 'aports/user-test/libc-test/**'
       - 'libc-test/**'
   schedule:
     - cron: '30 18 * * 4'
