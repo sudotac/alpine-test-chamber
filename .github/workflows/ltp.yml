@@ -1,13 +1,9 @@
 # SPDX-License-Identifier: CC0-1.0
 name: Run ltp
 on:
-  push:
-    branches:
-      - master
   pull_request:
     paths:
       - .github/workflows/ltp.yml
-      - 'aports/user-test/ltp/**'
   schedule:
     - cron: '30 18 * * 4'
   workflow_dispatch:
