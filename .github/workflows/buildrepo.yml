@@ -95,6 +95,6 @@ jobs:
       - name: Upload packages to R2
         if: ${{ github.event_name != 'pull_request' }}
         run: |
-          echo ::group::Run rsync
+          echo ::group::Run rclone sync
           su-exec smith rclone sync -v /home/smith/packages/user-test/"$(abuild -A)"/ r2:alpine-test-chamber/"$ALPINE_BRANCH"/user-test/"$(abuild -A)"/
           echo ::endgroup::
