@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 env:
-  ALPINE_BRANCH: v3.23
+  ALPINE_BRANCH: v3.24
 
 jobs:
   build:
@@ -27,7 +27,7 @@ jobs:
           - ubuntu-24.04
           - ubuntu-24.04-arm
     runs-on: ${{ matrix.runner }}
-    container: alpine:3.23
+    container: alpine:3.24
     steps:
       # note: we can't use some actions on alpine arm64 alas
       # https://github.com/actions/runner/issues/801
