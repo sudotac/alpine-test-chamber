@@ -1,7 +1,7 @@
 # Maintainer: sudotac <sudo@tofuyard.net>
 pkgname=ltp
 pkgver=20260529
-pkgrel=0
+pkgrel=1
 pkgdesc="Linux Test Project"
 url="https://linux-test-project.readthedocs.io"
 arch="all"
