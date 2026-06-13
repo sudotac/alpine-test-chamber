@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  ALPINE_BRANCH: v3.23
+  ALPINE_BRANCH: v3.24
 
 jobs:
   test:
