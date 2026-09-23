@@ -1,0 +1,6 @@
+self-hosted-runner:
+  labels:
+    # ubuntu 26.04 runners are not recognized for now
+    # https://github.com/rhysd/actionlint/issues/682
+    - ubuntu-26.04
+    - ubuntu-26.04-arm
