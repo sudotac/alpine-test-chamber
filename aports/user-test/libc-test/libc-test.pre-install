@@ -1,0 +1,6 @@
+#!/bin/sh
+
+addgroup -S libc-test 2>/dev/null
+adduser -S -D -H -h /opt/libc-test -s /sbin/nologin -G libc-test -g libc-test libc-test 2>/dev/null
+
+exit 0
