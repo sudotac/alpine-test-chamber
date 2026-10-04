@@ -56,7 +56,7 @@ jobs:
             --image-format qcow2 \
             --keys-dir apk/keys/"$arch" \
             --repositories-file apk/repositories \
-            --packages libc-test \
+            --packages 'su-exec libc-test' \
             --script-chroot \
             --serial-console \
             alpine-vm.qcow2 -- ./configure.sh
