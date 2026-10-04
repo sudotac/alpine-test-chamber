@@ -7,5 +7,5 @@ spawn {*}$argv
 expect "localhost login: "
 send -- "root\r"
 expect "localhost:~# "
-send -- "make -C /opt/libc-test\r"
+send -- "su-exec libc-test make -C /opt/libc-test\r"
 expect "localhost:~# "
