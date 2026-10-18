@@ -64,7 +64,7 @@ jobs:
             --image-size 8G \
             --keys-dir apk/keys/"$arch" \
             --repositories-file apk/repositories \
-            --packages ltp \
+            --packages 'edk2-shell ltp' \
             --script-chroot \
             --serial-console \
             alpine-vm.qcow2 -- ./configure.sh
