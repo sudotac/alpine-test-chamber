@@ -16,12 +16,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner:
-          - ubuntu-26.04
-          - ubuntu-26.04-arm
-        suite:
-          - syscalls
-    runs-on: ${{ matrix.runner }}
+        platform:
+          - runner: ubuntu-26.04
+            arch: x86_64
+          - runner: ubuntu-26.04-arm
+            arch: aarch64
+        suite: [syscalls]
+    runs-on: ${{ matrix.platform.runner }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -39,8 +40,7 @@ jobs:
 
           echo ::group::Install dependencies
           set -x
-          arch="$(uname -m)"
-          case "$arch" in
+          case "${{ matrix.platform.arch }}" in
             x86_64) qemu_arch=x86;;
             aarch64) qemu_arch=arm;;
           esac
@@ -62,7 +62,7 @@ jobs:
           sudo sh ./alpine-make-vm-image \
             --image-format qcow2 \
             --image-size 8G \
-            --keys-dir apk/keys/"$arch" \
+            --keys-dir apk/keys/"${{ matrix.platform.arch }}" \
             --repositories-file apk/repositories \
             --packages 'edk2-shell ltp' \
             --script-chroot \
@@ -84,8 +84,7 @@ jobs:
         run: |
           echo ::group::Configure per architecture
           set -x
-          arch="$(uname -m)"
-          if [ "$arch" = aarch64 ]; then
+          if [ "${{ matrix.platform.arch }}" = aarch64 ]; then
             machine=virt
             cpu=cortex-a76
             uefi_code=/usr/share/AAVMF/AAVMF_CODE.fd
@@ -103,7 +102,7 @@ jobs:
           echo ::group::Run ltp
           sudo LTP_TIMEOUT_MUL=8 kirk \
             --verbose \
-            --com "qemu:image=alpine-vm.qcow2:user=root:system=$arch:ram=3G:smp=$(nproc):serial=virtio${options:+:options=$options}" \
+            --com "qemu:image=alpine-vm.qcow2:user=root:system=${{ matrix.platform.arch }}:ram=3G:smp=$(nproc):serial=virtio${options:+:options=$options}" \
             --sut default:com=qemu \
             --suite-timeout 2h \
             --run-suite ${{ matrix.suite }}
