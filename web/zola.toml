@@ -1,0 +1,8 @@
+base_url = "https://sudotac.github.io/alpine-test-chamber/"
+
+compile_sass = true
+minify_html = true
+build_search_index = false
+
+[extra]
+# Put all your custom variables here
