@@ -101,9 +101,15 @@ jobs:
 
           echo ::group::Run ltp
           sudo LTP_TIMEOUT_MUL=8 kirk \
-            --verbose \
             --com "qemu:image=alpine-vm.qcow2:user=root:system=${{ matrix.platform.arch }}:ram=3G:smp=$(nproc):serial=virtio${options:+:options=$options}" \
             --sut default:com=qemu \
             --suite-timeout 2h \
-            --run-suite ${{ matrix.suite }}
+            --run-suite ${{ matrix.suite }} \
+            --json-report ${{ matrix.platform.arch }}-${{ matrix.suite }}.json
           echo ::endgroup::
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ltp
+          path: ${{ matrix.platform.arch }}-${{ matrix.suite }}.json
+          archive: false
