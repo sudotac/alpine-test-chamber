@@ -4,9 +4,8 @@ on:
   pull_request:
     paths:
       - .github/workflows/ltp.yml
-  schedule:
-    - cron: '30 18 * * 4'
   workflow_dispatch:
+  workflow_call:
 
 env:
   ALPINE_BRANCH: v3.24
