@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: CC0-1.0
+name: Run tests and deploy results on GitHub Pages
+on:
+  schedule:
+    - cron: '30 18 * * 4'
+  workflow_dispatch:
+
+jobs:
+  ltp:
+    uses: ./.github/workflows/ltp.yml
+
+  build:
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ltp
+          path: web/data/ltp
+          merge-multiple: true
+
+      - name: Create empty markdown files
+        run: |
+          find web/data/ltp -type f -name '*.json' \
+            -exec sh -c 'base="$(basename "$1" .json)"; printf "+++\ntitle = \"LTP (%s)\"\n+++\n" "$base" > web/content/ltp/"$base".md' shell {} \;
+
+      - uses: shalzz/zola-deploy-action@1be083648a1db2853ce4970e381740c0e2fd06de # v0.23.6
+        env:
+          BUILD_DIR: web
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

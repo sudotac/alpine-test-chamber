@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="robots" content="noindex,nofollow,noarchive">
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        font-family: sans-serif;
+      }
+      table {
+        border-collapse: collapse;
+        max-width: 100%;
+      }
+      table, th, td {
+        border: 1px solid;
+      }
+      td.cmdline {
+        display: flex;
+        flex-direction: column;
+        font-family: monospace;
+        border: none;
+      }
+      td.retval {
+        display: flex;
+        flex-direction: column;
+        border: none;
+      }
+      .log pre {
+        overflow-wrap: break-word;
+        word-break: break-all;
+        white-space: pre-wrap;
+      }
+      .pass {
+        color: light-dark(green, lightgreen);
+      }
+      .warn {
+        color: light-dark(yellow, lightyellow);
+      }
+      .fail, .brok {
+        color: light-dark(darkred, red);
+      }
+      .skip, .conf {
+        color: light-dark(darkcyan, cyan);
+      }
+    </style>
+  </head>
+  <body>
+    <section>
+      <div>
+        {% block content %} {% endblock content %}
+      </div>
+    </section>
+  </body>
+</html>

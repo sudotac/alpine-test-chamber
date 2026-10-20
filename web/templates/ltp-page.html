@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ page.title }}</h1>
+
+{% set data = load_data(path="data/ltp/"~ page.slug ~".json") %}
+<h2 id="environments">Environment</h2>
+<table>
+  <tbody>
+    <tr>
+      <th scope="row">distribution</th>
+      <td>{{ data.environment.distribution }}</td>
+    </tr>
+    <tr>
+      <th scope="row">distribution version</th>
+      <td>{{ data.environment.distribution_version }}</td>
+    </tr>
+    <tr>
+      <th scope="row">kernel</th>
+      <td><code>{{ data.environment.kernel }}</code></td>
+    </tr>
+    <tr>
+      <th scope="row">cmdline</th>
+      <td class="cmdline">
+        {% for c in data.environment.cmdline | split(pat=" ") %}
+          <span>{{ c }}</span>
+        {% endfor %}
+      </td>
+    </tr>
+    <tr>
+      <th scope="row">arch</th>
+      <td>{{ data.environment.arch }}</td>
+    </tr>
+    <tr>
+      <th scope="row">cpu</th>
+      <td>{{ data.environment.cpu }}</td>
+    </tr>
+    <tr>
+      <th scope="row">swap</th>
+      <td>{{ data.environment.swap }}</td>
+    </tr>
+    <tr>
+      <th scope="row">RAM</th>
+      <td>{{ data.environment.RAM }}</td>
+    </tr>
+  </tbody>
+</table>
+<h2 id="stats">Stats</h2>
+<table>
+  <tbody>
+    <tr>
+      <th scope="row">runtime</th>
+      <td>{{ data.stats.runtime }}</td>
+    </tr>
+    <tr>
+      <th scope="row">passed</th>
+      <td>{{ data.stats.passed }}</td>
+    </tr>
+    <tr>
+      <th scope="row">failed</th>
+      <td>{{ data.stats.failed }}</td>
+    </tr>
+    <tr>
+      <th scope="row">broken</th>
+      <td>{{ data.stats.broken }}</td>
+    </tr>
+    <tr>
+      <th scope="row">skipped</th>
+      <td>{{ data.stats.skipped }}</td>
+    </tr>
+    <tr>
+      <th scope="row">warnings</th>
+      <td>{{ data.stats.warnings }}</td>
+    </tr>
+  </tbody>
+</table>
+<h2 id="results">Results</h2>
+
+<table>
+  <thead>
+      <th scope="col">name</th>
+      <th scope="col">status</th>
+      <th scope="col">details</th>
+      <th scope="col">log</th>
+  </thead>
+  <tbody>
+    {% for result in data.results %}
+    <tr>
+      <th scope="row" id="{{ result.test_fqn }}">
+        <a href="#{{ result.test_fqn }}">{{ result.test_fqn }}</a>
+      </th>
+      <td>
+        <span class="{{ result.status | lower }}">{{ result.status | upper }}</span>
+      </td>
+      <td>
+        <table>
+          <tbody>
+            <tr>
+              <th scope="row">command</th>
+              <td><code>{{ result.test.command }}</code></td>
+            </tr>
+            <tr>
+              <th scope="row">arguments</th>
+              <td><code>{{ result.test.arguments | join(sep=" ") }}</code></td>
+            </tr>
+            <tr>
+              <th scope="row">retval</th>
+              <td class="retval">
+                {% for v in result.test.retval %}
+                  <span>{{ v }}</span>
+                {% endfor %}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">duration</th>
+              <td>{{ result.test.duration }}</td>
+            </tr>
+            <tr>
+              <th scope="row">passed</th>
+              <td>{{ result.test.passed }}</td>
+            </tr>
+            <tr>
+              <th scope="row">failed</th>
+              <td>{{ result.test.failed }}</td>
+            </tr>
+            <tr>
+              <th scope="row">broken</th>
+              <td>{{ result.test.broken }}</td>
+            </tr>
+            <tr>
+              <th scope="row">skipped</th>
+              <td>{{ result.test.skipped }}</td>
+            </tr>
+            <tr>
+              <th scope="row">warnings</th>
+              <td>{{ result.test.warnings }}</td>
+            </tr>
+          </tbody>
+        </table>
+      <td class="log"><pre>{{ result.test.log }}</pre></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock content %}
