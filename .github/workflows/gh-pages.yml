@@ -8,6 +8,7 @@ on:
 jobs:
   ltp:
     uses: ./.github/workflows/ltp.yml
+    secrets: inherit
 
   build:
     runs-on: ubuntu-latest
