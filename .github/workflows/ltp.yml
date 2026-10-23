@@ -104,11 +104,10 @@ jobs:
             --sut default:com=qemu \
             --suite-timeout 2h \
             --run-suite ${{ matrix.suite }} \
-            --json-report ${{ matrix.platform.arch }}-${{ matrix.suite }}.json
+            --json-report ltp-${{ matrix.platform.arch }}-${{ matrix.suite }}.json
           echo ::endgroup::
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ltp
-          path: ${{ matrix.platform.arch }}-${{ matrix.suite }}.json
+          path: ltp-${{ matrix.platform.arch }}-${{ matrix.suite }}.json
           archive: false
