@@ -5,9 +5,8 @@ on:
     paths:
       - .github/workflows/libc-test.yml
       - 'libc-test/**'
-  schedule:
-    - cron: '30 18 * * 4'
   workflow_dispatch:
+  workflow_call:
 
 env:
   ALPINE_BRANCH: v3.24
