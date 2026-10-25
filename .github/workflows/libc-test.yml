@@ -17,10 +17,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner:
-          - ubuntu-26.04
-          - ubuntu-26.04-arm
-    runs-on: ${{ matrix.runner }}
+        platform:
+          - runner: ubuntu-26.04
+            arch: x86_64
+          - runner: ubuntu-26.04-arm
+            arch: aarch64
+    runs-on: ${{ matrix.platform.runner }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -38,8 +40,7 @@ jobs:
 
           echo ::group::Install dependencies
           set -x
-          arch="$(uname -m)"
-          case "$arch" in
+          case "${{ matrix.platform.arch }}" in
             x86_64) qemu_arch=x86;;
             aarch64) qemu_arch=arm;;
           esac
@@ -59,7 +60,7 @@ jobs:
             alpine-make-vm-image
           sudo sh ./alpine-make-vm-image \
             --image-format qcow2 \
-            --keys-dir apk/keys/"$arch" \
+            --keys-dir apk/keys/"${{ matrix.platform.arch }}" \
             --repositories-file apk/repositories \
             --packages 'edk2-shell su-exec libc-test' \
             --script-chroot \
@@ -98,7 +99,7 @@ jobs:
           echo ::endgroup::
 
           echo ::group::Run libc-test
-          ./libc-test/run.exp sudo qemu-system-"$arch" \
+          ./libc-test/run.exp sudo qemu-system-"${{ matrix.platform.arch }}" \
             -m 3G \
             ${machine:+--machine "$machine"} \
             ${kvm+-enable-kvm} \
