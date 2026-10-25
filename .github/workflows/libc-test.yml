@@ -121,3 +121,18 @@ jobs:
           grep '^FAIL ' libc-test.log | sed 's/^FAIL /::warning::FAIL /'
           echo
           echo ::endgroup::
+
+          echo ::group::Extract test log from VM image
+          sudo modprobe nbd
+          sudo qemu-nbd -c /dev/nbd0 alpine-vm.qcow2
+          mkdir root
+          sudo mount /dev/nbd0p2 root
+          cp root/opt/libc-test/src/REPORT libc-test-${{ matrix.platform.arch }}.log
+          sudo umount root
+          sudo qemu-nbd -d /dev/nbd0
+          echo ::endgroup::
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          path: libc-test-${{ matrix.platform.arch }}.log
+          archive: false
