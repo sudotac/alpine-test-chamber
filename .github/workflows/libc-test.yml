@@ -58,6 +58,7 @@ jobs:
             -e "s/'console=tty0'/'console=hvc0'/" \
             alpine-make-vm-image
           sudo sh ./alpine-make-vm-image \
+            --boot-mode UEFI \
             --image-format qcow2 \
             --keys-dir apk/keys/"${{ matrix.platform.arch }}" \
             --repositories-file apk/repositories \
@@ -86,6 +87,8 @@ jobs:
             x86_64)
               kvm=
               cpu=host
+              uefi_code=/usr/share/OVMF/OVMF_CODE_4M.fd
+              uefi_vars=/usr/share/OVMF/OVMF_VARS_4M.fd
               ;;
             aarch64)
               machine=virt
