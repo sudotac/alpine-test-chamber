@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ page.title }}</h1>
+
+<h2 id="log">Log</h2>
+<pre>{{ load_data(path="data/libc-test/"~ page.slug ~".log") }}</pre>
+
+{% endblock content %}
