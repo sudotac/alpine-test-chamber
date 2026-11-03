@@ -1,0 +1,91 @@
+# SPDX-License-Identifier: MIT
+name: 'alpine-make-vm-image'
+description: 'Run alpine-make-vm-image in action'
+
+inputs:
+  arch:
+    description: 'target CPU architecture'
+  boot-mode:
+    description: 'either "BIOS" or "UEFI"'
+  branch:
+    description: 'alpine branch to install'
+  fs-skel-dir:
+    description: 'path of directory whose contents to recursively copy into / in the image'
+  fs-skel-chown:
+    description: 'force all files from FS_SKEL_DIR (specified in "fs_skel_dir" input) to be owned by the specified USER:GROUP'
+  partition:
+    description: 'create GUID Partition Table (GPT) with a single partition'
+  image-format:
+    description: 'format of the disk'
+  image-size:
+    description: 'size of the disk image to create in bytes or with suffix'
+  initfs-features:
+    description: 'list of additional mkinitfs features (basically modules) to be included in initramfs (see mkinitfs -L)'
+  kernel-flavor:
+    description: 'kernel flavor to install'
+  keys-dir:
+    description: 'path of directory with alpine keys to copy into the image'
+  mirror-uri:
+    description: 'URI of the aports mirror to fetch packages'
+  cleanup:
+    description: 'umount and disconnect image when done ("true" or "false", "true" by default)'
+    default: true
+  packages:
+    description: 'additional packages to install into the image (separated by spaces)'
+  repositories-file:
+    description: 'path of the repositories file to copy into the rootfs'
+  rootfs:
+    description: 'filesystem to create on the image'
+  script-chroot:
+    description: 'bind SCRIPT (specified in "script" input) directory at /mnt inside image and chroot into the image before executing SCRIPT ("true" or "false", "false" by default)'
+    default: false
+  serial-console:
+    description: 'add configuration for a serial console on ttyS0 ("true" or "false", "false" by default)'
+    default: false
+  image:
+    description: 'path of block device or disk image file to use or create if it does not exist'
+    required: true
+  script:
+    description: 'path of script to execute after installing base system in the mounted image and before unmounting it'
+  script-opts:
+    description: 'arguments to pass to the script'
+
+outputs:
+  image:
+    description: 'path of block device or disk image file (specified in "image" input)'
+    value: "${{ inputs.image }}"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        repository: alpinelinux/alpine-make-vm-image
+        ref: ab659ff532b0e27684a08d11df116b9f7665081a # v0.13.4
+        path: alpine-make-vm-image
+
+    - name: Run alpine-make-vm-image
+      shell: sh
+      run: |
+        sudo alpine-make-vm-image/alpine-make-vm-image \
+          ${{ inputs.arch               && format('--arch "{0}"',              inputs.arch)              || '' }} \
+          ${{ inputs.boot-mode          && format('--boot-mode "{0}"',         inputs.boot-mode)         || '' }} \
+          ${{ inputs.branch             && format('--branch "{0}"',            inputs.branch)            || '' }} \
+          ${{ inputs.fs-skel-dir        && format('--fs-skel-dir "{0}"',       inputs.fs-skel-dir)       || '' }} \
+          ${{ inputs.fs-skel-chown      && format('--fs-skel-chown "{0}"',     inputs.fs-skel-chown)     || '' }} \
+          ${{ inputs.partition          && format('--partition "{0}"',         inputs.partition)         || '' }} \
+          ${{ inputs.image-format       && format('--image-format "{0}"',      inputs.image-format)      || '' }} \
+          ${{ inputs.image-size         && format('--image-size "{0}"',        inputs.image-size)        || '' }} \
+          ${{ inputs.initfs-features    && format('--initfs-features "{0}"',   inputs.initfs-features)   || '' }} \
+          ${{ inputs.kernel-flavor      && format('--kernel-flavor "{0}"',     inputs.kernel-flavor)     || '' }} \
+          ${{ inputs.keys-dir           && format('--keys-dir "{0}"',          inputs.keys-dir)          || '' }} \
+          ${{ inputs.mirror-uri         && format('--mirror-uri "{0}"',        inputs.mirror-uri)        || '' }} \
+          ${{ !inputs.cleanup           && '--no-cleanup'                                                || '' }} \
+          ${{ inputs.packages           && format('--packages "{0}"',          inputs.packages)          || '' }} \
+          ${{ inputs.repositories-file  && format('--repositories-file "{0}"', inputs.repositories-file) || '' }} \
+          ${{ inputs.rootfs             && format('--rootfs "{0}"',            inputs.rootfs)            || '' }} \
+          ${{ inputs.script-chroot      && '--script-chroot'                                             || '' }} \
+          ${{ inputs.serial-console     && '--serial-console'                                            || '' }} \
+          "${{ inputs.image }}" \
+          -- \
+          ${{ inputs.script && (inputs.script-opts && format('"{0}" {1}', inputs.script, inputs.script-opts) || format('"{0}"', inputs.script)) || '' }}
