@@ -25,49 +25,35 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Prefer original sudo to sudo-rs
+      - name: Install dependencies
         run: |
-          sudo update-alternatives --set sudo /usr/bin/sudo.ws
-
-      - name: Create VM image
-        run: |
-          echo ::group::Download alpine-make-vm-image script
-          wget https://raw.githubusercontent.com/alpinelinux/alpine-make-vm-image/v0.13.4/alpine-make-vm-image \
-            && echo '03dc4581b1eaa34a951cc210e963b98ded44dc469f7d0c05f00431ceb58390b78f3db0386fc94aa1e5b2c6471f2dd74b663454179781bdd3a30776ffa525e2cb  alpine-make-vm-image' | sha512sum -c \
-            || exit 1
-          echo ::endgroup::
-
-          echo ::group::Install dependencies
-          set -x
           case "${{ matrix.platform.arch }}" in
             x86_64) qemu_arch=x86;;
             aarch64) qemu_arch=arm;;
           esac
-          set +x
           sudo apt-get update
           sudo apt-get install qemu-utils qemu-system-"$qemu_arch" python3-pip
           sudo pip install kirk
-          echo ::endgroup::
 
-          echo ::group::Create Alpine VM image
+      - name: Prepare to create VM image
+        run: |
           sed \
             -e "s/@ALPINE_BRANCH@/$ALPINE_BRANCH/" \
             -e 's|@R2_DEV_URL@|${{ secrets.r2_dev_url }}|' \
             apk/repositories.in > apk/repositories
-          sed -i \
-            -e "s/'ttyS0'/'hvc0'/" \
-            -e "s/'console=tty0'/'console=hvc0'/" \
-            alpine-make-vm-image
-          sudo sh ./alpine-make-vm-image \
-            --image-format qcow2 \
-            --image-size 8G \
-            --keys-dir apk/keys/"${{ matrix.platform.arch }}" \
-            --repositories-file apk/repositories \
-            --packages 'edk2-shell ltp' \
-            --script-chroot \
-            --serial-console \
-            alpine-vm.qcow2 -- ./configure.sh
-          echo ::endgroup::
+
+      - uses: ./.github/actions/alpine-make-vm-image
+        id: make-vm-image
+        with:
+          image-format: qcow2
+          image-size: 8G
+          keys-dir: apk/keys/"${{ matrix.platform.arch }}"
+          repositories-file: apk/repositories
+          packages: 'edk2-shell ltp'
+          script-chroot: 'true'
+          serial-console: 'true'
+          image: alpine-vm.qcow2
+          script: ./configure.sh
 
       # https://github.blog/changelog/2024-04-02-github-actions-hardware-accelerated-android-virtualization-now-available/
       - name: Enable KVM group perms
@@ -100,7 +86,7 @@ jobs:
 
           echo ::group::Run ltp
           sudo LTP_TIMEOUT_MUL=8 kirk \
-            --com "qemu:image=alpine-vm.qcow2:user=root:system=${{ matrix.platform.arch }}:ram=3G:smp=$(nproc):serial=virtio${options:+:options=$options}" \
+            --com "qemu:image=${{ steps.make-vm-image.outputs.image }}:user=root:system=${{ matrix.platform.arch }}:ram=3G:smp=$(nproc):serial=virtio${options:+:options=$options}" \
             --sut default:com=qemu \
             --suite-timeout 2h \
             --run-suite ${{ matrix.suite }} \
