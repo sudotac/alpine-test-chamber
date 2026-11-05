@@ -45,6 +45,7 @@ jobs:
       - uses: ./.github/actions/alpine-make-vm-image
         id: make-vm-image
         with:
+          boot-mode: UEFI
           image-format: qcow2
           image-size: 8G
           keys-dir: apk/keys/"${{ matrix.platform.arch }}"
@@ -69,24 +70,30 @@ jobs:
         run: |
           echo ::group::Configure per architecture
           set -x
-          if [ "${{ matrix.platform.arch }}" = aarch64 ]; then
-            machine=virt
-            cpu=cortex-a76
-            uefi_code=/usr/share/AAVMF/AAVMF_CODE.fd
-            uefi_vars=/usr/share/AAVMF/AAVMF_VARS.fd
-            options="-machine $machine -cpu $cpu -drive if=pflash,format=raw,readonly=on,file=$uefi_code -drive if=pflash,format=raw,file=$uefi_vars"
-
-            sudo sed -i \
-              -e '/"-enable-kvm"/d' \
-              -e 's|/dev/vport1p1|/dev/vport2p1|' \
-              "$(python -c 'import libkirk; print(libkirk.__path__[0])')"/channels/qemu.py
-          fi
+          case "${{ matrix.platform.arch }}" in
+            x86_64)
+              cpu=host
+              uefi_code=/usr/share/OVMF/OVMF_CODE_4M.fd
+              uefi_vars=/usr/share/OVMF/OVMF_VARS_4M.fd
+              ;;
+            aarch64)
+              machine=virt
+              cpu=cortex-a76
+              uefi_code=/usr/share/AAVMF/AAVMF_CODE.fd
+              uefi_vars=/usr/share/AAVMF/AAVMF_VARS.fd
+              sudo sed -i \
+                -e '/"-enable-kvm"/d' \
+                -e 's|/dev/vport1p1|/dev/vport2p1|' \
+                "$(python -c 'import libkirk; print(libkirk.__path__[0])')"/channels/qemu.py
+              ;;
+          esac
+          options="${machine:+-machine $machine} -cpu $cpu -drive if=pflash,format=raw,readonly=on,file=$uefi_code -drive if=pflash,format=raw,file=$uefi_vars"
           set +x
           echo ::endgroup::
 
           echo ::group::Run ltp
           sudo LTP_TIMEOUT_MUL=8 kirk \
-            --com "qemu:image=${{ steps.make-vm-image.outputs.image }}:user=root:system=${{ matrix.platform.arch }}:ram=3G:smp=$(nproc):serial=virtio${options:+:options=$options}" \
+            --com "qemu:image=${{ steps.make-vm-image.outputs.image }}:user=root:system=${{ matrix.platform.arch }}:ram=3G:smp=$(nproc):serial=virtio:options=$options" \
             --sut default:com=qemu \
             --suite-timeout 2h \
             --run-suite ${{ matrix.suite }} \
