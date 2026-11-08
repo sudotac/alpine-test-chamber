@@ -64,6 +64,25 @@ runs:
         ref: ab659ff532b0e27684a08d11df116b9f7665081a # v0.13.4
         path: alpine-make-vm-image
 
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      id: cache-apk
+      with:
+        path: alpine-make-vm-image/apk.static
+        key: ${{ runner.arch }}-apk
+
+    - name: Install apk
+      shell: sh
+      working-directory: ./alpine-make-vm-image
+      run: |
+        HOST_ARCH="$(uname -m)"
+        APK_TOOLS_URI="https://gitlab.alpinelinux.org/api/v4/projects/5/packages/generic/v3.0.9/$HOST_ARCH/apk.static"
+        case "$HOST_ARCH" in
+          x86_64) APK_TOOLS_SHA256=ff1a069e58a603556d68bc8f1f8ba006a7319e72e5d6bc7191bfef834edd9966 ;;
+          aarch64) APK_TOOLS_SHA256=555ca7d43c747ddb421bc0d9cd90544daf2a4d11b0cfe6a47052a9738f6cfc6f ;;
+        esac
+        printf '%s  %s\n' "$APK_TOOLS_SHA256" apk.static | sha256sum -c || wget -T 10 --no-verbose "$APK_TOOLS_URI"
+        sudo install -Dm755 apk.static /usr/local/bin/apk
+
     - name: Run alpine-make-vm-image
       shell: sh
       run: |
